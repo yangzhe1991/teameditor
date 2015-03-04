@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>team editor</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+    <script language="javascript" type="text/javascript">
+        var wsUri = "ws://localhost:18001/echo";
+        var output;
+        function init() {
+            table = document.getElementById("table");
+            testWebSocket();
+        }
+        function testWebSocket() {
+            websocket = new WebSocket(wsUri);
+            websocket.onopen = function (evt) {
+                onOpen(evt)
+            };
+            websocket.onclose = function (evt) {
+                onClose(evt)
+            };
+            websocket.onmessage = function (evt) {
+                onMessage(evt)
+            };
+            websocket.onerror = function (evt) {
+                onError(evt)
+            };
+        }
+        function onOpen(evt) {
+
+        }
+        function onClose(evt) {
+
+        }
+        function onMessage(evt) {
+            console.log("Received: "+ evt.data);
+            var msg = JSON.parse(evt.data);
+            changeTable(msg.r,msg.c,msg.data);
+        }
+        function onError(evt) {
+            console.log("Error: "+ evt.data());
+        }
+        function doSend(message) {
+            var json=JSON.stringify(message);
+            console.log("Sending:" + json);
+            websocket.send(json);
+        }
+
+        window.addEventListener("load", init, false);
+
+        function changeTable(r,c,data){
+
+            mayEnlarge(r,c);
+            $("#"+r+"_"+c)[0].value=data;
+        }
+        preCol="@";
+        function colToABC(){
+            for(var i=preCol.length-1;i>=0;i--){
+                s=preCol[i];
+                s=String.fromCharCode((s+"").charCodeAt()+1);
+                preCol=preCol.substring(0,i)+s+preCol.substring(i+1);
+                if(s!='['){
+                    break;
+                }
+            }
+            if(preCol[0]=="["){
+                preCol="A"+preCol;
+            }
+            preCol=preCol.replace(/\[/g,"A");
+            return preCol;
+        }
+        function mayEnlarge(row,col){
+            table = $("#table");
+            trs = table.find("tr");
+            numOfRows = trs.length-1;
+            numOfCols = $(trs[0]).find("td").length-1;
+            var appendstr="";
+            while(row>numOfRows){
+                numOfRows++;
+                appendstr+="<tr id='row"+numOfRows+"'><td>"+numOfRows+"</td></tr>";
+            }
+            $("#table").append(appendstr);
+            appendstr="";
+            while(col>numOfCols){
+                numOfCols++;
+                appendstr+="<td>"+colToABC()+"</td>";
+            }
+            $(trs[0]).append(appendstr);
+            for(var i=1;i<=numOfRows;i++){
+                appendstr="";
+                var r=$("#row"+i);
+                var l=r.find("td").length;
+                while(true) {
+                    if(l>numOfCols){
+                        break;
+                    }
+                    appendstr+="<td id='td"+r+"_"+l+"'><input id='"+i+"_"+l+"' cols='6'/></td>";
+                    l++;
+                }
+                $("#row"+i).append(appendstr);
+                console.log(i+"done")
+            }
+        }
+        $(document).ready(function() {
+            $("body").delegate("input", "blur", function () {
+                var s=this.id.split("_");
+                doSend({r:s[0],c:s[1],data:this.value});
+            });
+        });
+    </script>
+</head>
+
+<body>
+<table id="table">
+    <tr><td></td></tr>
+</table>
+</body>
+</html>

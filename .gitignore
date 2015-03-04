@@ -2,6 +2,7 @@
 *.o
 *.a
 *.so
+teameditor
 
 # Folders
 _obj
